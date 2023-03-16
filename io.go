@@ -10,7 +10,7 @@ import (
 )
 
 func Passwd(hint string, defaultVal string) InputMsg {
-	return passwd(hint, defaultVal, "")
+	return passwd2(hint, defaultVal, "●")
 }
 
 func PasswdWithMask(hint string, defaultVal string, mask string) InputMsg {
@@ -21,41 +21,42 @@ func MessageBoxRaw(hint string, defaultVal string) InputMsg {
 	return messageBox(hint, defaultVal)
 }
 
+// 定义一个名为 messageBox 的函数，它接收两个字符串参数：hint 和 defaultVal，并返回一个 InputMsg 结构体
 func messageBox(hint string, defaultVal string) InputMsg {
-	var ioBuf []rune
+	var ioBuf []rune // 用于存储用户的输入字符序列
 	if hint != "" {
-		fmt.Print(hint)
+		fmt.Print(hint) // 如果提示信息不为空，则输出提示信息
 	}
 	if strings.Index(hint, "\n") >= 0 {
 		hint = strings.TrimSpace(hint[strings.LastIndex(hint, "\n"):])
 	}
 	fd := int(os.Stdin.Fd())
-	state, err := terminal.MakeRaw(fd)
+	state, err := terminal.MakeRaw(fd) // 获取标准输入的原始状态，并将其设置为非标准模式
 	if err != nil {
-		return InputMsg{"", err}
+		return InputMsg{"", err} // 如果出现错误，则返回一个包含错误的结构体
 	}
-	defer fmt.Println()
-	defer terminal.Restore(fd, state)
-	inputReader := bufio.NewReader(os.Stdin)
+	defer fmt.Println()                      // 延迟执行 fmt.Println() 函数，确保最后输出一个换行符
+	defer terminal.Restore(fd, state)        // 在函数返回之前恢复标准输入的状态
+	inputReader := bufio.NewReader(os.Stdin) // 创建一个新的 bufio.Reader 对象，用于从标准输入读取数据
 	for {
-		b, _, err := inputReader.ReadRune()
+		b, _, err := inputReader.ReadRune() // 从标准输入读取一个 rune（字符）
 		if err != nil {
-			return InputMsg{"", err}
+			return InputMsg{"", err} // 如果出现错误，则返回一个包含错误的结构体
 		}
-		if b == 0x0d {
-			strValue := strings.TrimSpace(string(ioBuf))
-			if len(strValue) == 0 {
+		if b == 0x0d { // 如果读取的字符是回车符，则表示用户输入结束
+			strValue := strings.TrimSpace(string(ioBuf)) // 将用户输入的字符序列转换为字符串，并去除字符串首尾的空白字符
+			if len(strValue) == 0 {                      // 如果用户没有输入任何字符，则使用默认值
 				strValue = defaultVal
 			}
-			return InputMsg{strValue, nil}
+			return InputMsg{strValue, nil} // 返回一个包含输入字符串和空错误的结构体
 		}
-		if b == 0x08 || b == 0x7F {
+		if b == 0x08 || b == 0x7F { // 如果读取的字符是退格符或删除符，则表示用户要删除之前输入的字符
 			if len(ioBuf) > 0 {
-				ioBuf = ioBuf[:len(ioBuf)-1]
+				ioBuf = ioBuf[:len(ioBuf)-1] // 从字符序列中删除最后一个字符
 			}
-			fmt.Print("\r")
+			fmt.Print("\r") // 将光标移动到行首
 			for i := 0; i < len(ioBuf)+2+len(hint); i++ {
-				fmt.Print(" ")
+				fmt.Print(" ") // 用空格清除屏幕上已输入的字符
 			}
 		} else {
 			ioBuf = append(ioBuf, b)
@@ -129,6 +130,46 @@ func passwd(hint string, defaultVal string, mask string) InputMsg {
 		}
 		for i := 0; i < len(ioBuf); i++ {
 			fmt.Print(mask) // 在屏幕上用掩码替换已输入的字符
+		}
+	}
+}
+
+func passwd2(hint string, defaultVal string, mask string) InputMsg {
+	var ioBuf []rune
+	if hint != "" {
+		fmt.Print(hint)
+	}
+	if strings.Index(hint, "\n") >= 0 {
+		hint = strings.TrimSpace(hint[strings.LastIndex(hint, "\n"):])
+	}
+	fd := int(os.Stdin.Fd())
+	state, err := terminal.MakeRaw(fd)
+	if err != nil {
+		return InputMsg{"", err}
+	}
+	defer fmt.Println()
+	defer terminal.Restore(fd, state)
+	inputReader := bufio.NewReader(os.Stdin)
+	for {
+		b, _, err := inputReader.ReadRune()
+		if err != nil {
+			return InputMsg{"", err}
+		}
+		if b == 0x0d {
+			strValue := strings.TrimSpace(string(ioBuf))
+			if len(strValue) == 0 {
+				strValue = defaultVal
+			}
+			return InputMsg{strValue, nil}
+		}
+		if b == 0x08 || b == 0x7F {
+			if len(ioBuf) > 0 {
+				ioBuf = ioBuf[:len(ioBuf)-1]
+				fmt.Print("\033[1D\033[K") // 删除一个字符并清除屏幕上已输入的字符
+			}
+		} else {
+			ioBuf = append(ioBuf, b)
+			fmt.Print(mask)
 		}
 	}
 }
