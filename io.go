@@ -10,7 +10,7 @@ import (
 )
 
 func Passwd(hint string, defaultVal string) InputMsg {
-	return passwd2(hint, defaultVal, "●")
+	return passwd(hint, defaultVal, "●")
 }
 
 func PasswdWithMask(hint string, defaultVal string, mask string) InputMsg {
@@ -130,46 +130,6 @@ func passwd(hint string, defaultVal string, mask string) InputMsg {
 		}
 		for i := 0; i < len(ioBuf); i++ {
 			fmt.Print(mask) // 在屏幕上用掩码替换已输入的字符
-		}
-	}
-}
-
-func passwd2(hint string, defaultVal string, mask string) InputMsg {
-	var ioBuf []rune
-	if hint != "" {
-		fmt.Print(hint)
-	}
-	if strings.Index(hint, "\n") >= 0 {
-		hint = strings.TrimSpace(hint[strings.LastIndex(hint, "\n"):])
-	}
-	fd := int(os.Stdin.Fd())
-	state, err := terminal.MakeRaw(fd)
-	if err != nil {
-		return InputMsg{"", err}
-	}
-	defer fmt.Println()
-	defer terminal.Restore(fd, state)
-	inputReader := bufio.NewReader(os.Stdin)
-	for {
-		b, _, err := inputReader.ReadRune()
-		if err != nil {
-			return InputMsg{"", err}
-		}
-		if b == 0x0d {
-			strValue := strings.TrimSpace(string(ioBuf))
-			if len(strValue) == 0 {
-				strValue = defaultVal
-			}
-			return InputMsg{strValue, nil}
-		}
-		if b == 0x08 || b == 0x7F {
-			if len(ioBuf) > 0 {
-				ioBuf = ioBuf[:len(ioBuf)-1]
-				fmt.Print("\033[1D\033[K") // 删除一个字符并清除屏幕上已输入的字符
-			}
-		} else {
-			ioBuf = append(ioBuf, b)
-			fmt.Print(mask)
 		}
 	}
 }
