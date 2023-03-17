@@ -1,4 +1,4 @@
-module stario
+module github.com/antnesswcm/stario
 
 go 1.20
 
