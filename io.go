@@ -187,7 +187,7 @@ func GetYesNoInput(hint string, defaults bool) bool {
 }
 
 // WaitUntilString 函数会读取从标准输入流 os.Stdin 中输入的字符，直到满足 trigger 参数指定的字符串条件为止
-// 如果 hint 参数为读取期间显示的提示信息
+// hint 参数为读取期间显示的提示信息
 // 如果 repeat 参数为 true，则在读取期间，如果输入错误，将会重复显示提示信息
 // 函数返回 error 类型，如果在读取期间发生错误，则会返回该错误
 func WaitUntilString(hint string, trigger string, repeat bool) error {
